@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UAE Social Sector AI Agent</title>
+<style>
+:root {
+  --bg:       #0d1117;
+  --bg2:      #161b22;
+  --bg3:      #21262d;
+  --border:   rgba(255,255,255,0.08);
+  --text:     #e6edf3;
+  --muted:    #8b949e;
+  --blue:     #388bfd;
+  --blue-dim: rgba(56,139,253,0.12);
+  --green:    #3fb950;
+  --grn-dim:  rgba(63,185,80,0.12);
+  --yellow:   #d29922;
+  --yel-dim:  rgba(210,153,34,0.12);
+  --red:      #f85149;
+  --red-dim:  rgba(248,81,73,0.12);
+  --teal:     #39d0d8;
+  --purple:   #bc8cff;
+  --r:        10px;
+  --font:     'Inter', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.6; }
+a { color: var(--blue); text-decoration: none; }
+.shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+.sidebar { background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.content { padding: 28px 36px; }
+.brand { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+.brand-flag { font-size: 22px; margin-bottom: 6px; }
+.brand h1 { font-size: 13px; font-weight: 600; line-height: 1.4; }
+.brand p  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.nav { padding: 10px 0; flex: 1; }
+.nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 8px 16px 4px; }
+.nav-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 16px; font-size: 13px; color: var(--muted); cursor: pointer; border-left: 2px solid transparent; transition: all 0.12s; }
+.nav-item:hover  { color: var(--text); background: var(--bg3); }
+.nav-item.active { color: var(--blue); border-left-color: var(--blue); background: var(--blue-dim); }
+.nav-badge { font-size: 10px; background: var(--bg3); color: var(--muted); padding: 1px 7px; border-radius: 20px; }
+.nav-badge.hot { background: var(--red-dim); color: var(--red); }
+.run-area { padding: 14px 16px; border-top: 1px solid var(--border); }
+.run-btn { width: 100%; padding: 9px; background: var(--blue); color: #fff; border: none; border-radius: var(--r); font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+.run-btn:hover    { opacity: 0.85; }
+.run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.run-status { font-size: 11px; color: var(--muted); margin-top: 8px; text-align: center; line-height: 1.4; }
+.topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+.topbar h2 { font-size: 18px; font-weight: 600; }
+.pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill { font-size: 11px; background: var(--bg2); border: 1px solid var(--border); color: var(--muted); padding: 4px 10px; border-radius: 20px; }
+.pill.ok  { border-color: rgba(63,185,80,0.4); color: var(--green); background: var(--grn-dim); }
+.pill.err { border-color: rgba(248,81,73,0.4); color: var(--red); background: var(--red-dim); }
+.stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+.stat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 18px; }
+.stat-val { font-size: 26px; font-weight: 600; }
+.stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.panel { display: none; }
+.panel.active { display: block; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 18px 20px; margin-bottom: 12px; }
+.urgent { background: var(--red-dim); border: 1px solid rgba(248,81,73,0.3); border-radius: var(--r); padding: 14px 18px; margin-bottom: 20px; }
+.urgent h3 { color: var(--red); font-size: 13px; margin-bottom: 8px; }
+.urgent li { font-size: 13px; margin-left: 16px; padding: 2px 0; }
+.exec { font-size: 15px; line-height: 1.85; }
+.trend { border-left: 3px solid var(--blue); }
+.trend-title { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+.trend-desc  { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.trend-uae   { font-size: 12px; color: var(--teal); background: rgba(57,208,216,0.08); padding: 7px 10px; border-radius: 6px; margin-bottom: 8px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.chip { font-size: 11px; background: var(--bg3); border: 1px solid var(--border); color: var(--muted); padding: 2px 8px; border-radius: 20px; }
+.action { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.action:last-child { border-bottom: none; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.dot-high { background: var(--red); }
+.dot-medium { background: var(--yellow); }
+.dot-low { background: var(--green); }
+.action-text { font-size: 13px; }
+.action-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.idea { position: relative; }
+.idea-id    { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+.idea-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+.idea-tags  { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.tag { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 5px; }
+.tag-green  { background: var(--grn-dim); color: var(--green); }
+.tag-yellow { background: var(--yel-dim); color: var(--yellow); }
+.tag-red    { background: var(--red-dim); color: var(--red); }
+.tag-blue   { background: var(--blue-dim); color: var(--blue); }
+.idea-row { margin-bottom: 10px; }
+.idea-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+.idea-val { font-size: 13px; }
+.quickstart { background: var(--grn-dim); border: 1px solid rgba(63,185,80,0.25); border-radius: 7px; padding: 10px 14px; margin-top: 12px; font-size: 13px; }
+.quickstart strong { color: var(--green); }
+.article-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.article { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.article:last-child { border-bottom: none; }
+.article-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 6px; }
+.stream { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+.s-news   { background: var(--red-dim);  color: var(--red); }
+.s-ai     { background: var(--blue-dim); color: var(--blue); }
+.s-policy { background: var(--yel-dim);  color: var(--yellow); }
+.article-title { font-size: 13px; font-weight: 500; flex: 1; }
+.article-meta  { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.article-sum   { font-size: 13px; color: var(--muted); line-height: 1.65; }
+.score-row { display: flex; gap: 3px; float: right; }
+.score-pip { width: 5px; height: 5px; border-radius: 50%; background: var(--bg3); }
+.score-pip.on { background: var(--blue); }
+.uae-note { font-size: 12px; color: var(--teal); margin-top: 6px; }
+.signal { border-left: 3px solid var(--yellow); }
+.signal-src  { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.signal-text { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+.signal-uae  { font-size: 13px; color: var(--teal); }
+.log-box { background: #0a0e14; border: 1px solid var(--border); border-radius: var(--r); padding: 16px; font-family: monospace; font-size: 12px; color: #7ee787; height: 360px; overflow-y: auto; white-space: pre-wrap; }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty h3 { font-size: 16px; color: var(--text); margin-bottom: 8px; }
+.empty p  { font-size: 13px; line-height: 1.7; }
+.empty .big { font-size: 40px; margin-bottom: 12px; }
+@media (max-width: 700px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .content { padding: 16px; }
+  .stats { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-flag">🇦🇪</div>
+    <h1>Social Sector<br>AI Agent</h1>
+    <p id="brand-date">No briefing yet</p>
+  </div>
+  <nav class="nav">
+    <div class="nav-label">Briefing</div>
+    <div class="nav-item active" onclick="show('summary',this)">Executive Summary</div>
+    <div class="nav-item" onclick="show('trends',this)">Top Trends <span class="nav-badge" id="b-trends">0</span></div>
+    <div class="nav-item" onclick="show('actions',this)">This Week's Actions <span class="nav-badge" id="b-actions">0</span></div>
+    <div class="nav-item" onclick="show('urgent',this)">Urgent Items <span class="nav-badge hot" id="b-urgent">0</span></div>
+    <div class="nav-label" style="margin-top:8px">Intelligence</div>
+    <div class="nav-item" onclick="show('ideas',this)">UAE Ideas <span class="nav-badge" id="b-ideas">0</span></div>
+    <div class="nav-item" onclick="show('articles',this)">Articles <span class="nav-badge" id="b-articles">0</span></div>
+    <div class="nav-item" onclick="show('signals',this)">Policy Signals <span class="nav-badge" id="b-signals">0</span></div>
+    <div class="nav-label" style="margin-top:8px">System</div>
+    <div class="nav-item" onclick="show('log',this)">Run Log</div>
+  </nav>
+  <div class="run-area">
+    <button class="run-btn" id="runBtn" onclick="runAgent()">&#9654; Run Now</button>
+    <div class="run-status" id="runStatus">Click to generate today's briefing</div>
+  </div>
+</aside>
+
+<main class="content">
+  <div class="topbar">
+    <h2 id="topTitle">Daily Intelligence Briefing</h2>
+    <div class="pills">
+      <span class="pill" id="pillModel">—</span>
+      <span class="pill" id="pillRuntime">—</span>
+      <span class="pill" id="pillKey">Checking...</span>
+      <span class="pill" id="pillDate">No briefing</span>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="s-articles">—</div><div class="stat-lbl">Articles analysed</div></div>
+    <div class="stat"><div class="stat-val" id="s-ideas">—</div><div class="stat-lbl">Ideas generated</div></div>
+    <div class="stat"><div class="stat-val" id="s-urgent">—</div><div class="stat-lbl">Urgent items</div></div>
+    <div class="stat"><div class="stat-val" id="s-trends">—</div><div class="stat-lbl">Trends identified</div></div>
+  </div>
+
+  <div class="panel active" id="panel-summary">
+    <div id="c-summary"><div class="empty"><div class="big">🤖</div><h3>No briefing yet</h3><p>Click <strong>Run Now</strong> to generate today's briefing.<br>Takes about 2-4 minutes.</p></div></div>
+  </div>
+  <div class="panel" id="panel-trends">
+    <div id="c-trends"><div class="empty"><h3>Run the agent to see trends</h3></div></div>
+  </div>
+  <div class="panel" id="panel-actions">
+    <div id="c-actions"><div class="empty"><h3>Run the agent to see actions</h3></div></div>
+  </div>
+  <div class="panel" id="panel-urgent">
+    <div id="c-urgent"><div class="empty"><h3>No urgent items</h3></div></div>
+  </div>
+  <div class="panel" id="panel-ideas">
+    <div id="c-ideas"><div class="empty"><h3>Run the agent to see UAE implementation ideas</h3></div></div>
+  </div>
+  <div class="panel" id="panel-articles">
+    <div id="c-articles"><div class="empty"><h3>Run the agent to see articles</h3></div></div>
+  </div>
+  <div class="panel" id="panel-signals">
+    <div id="c-signals"><div class="empty"><h3>Run the agent to see policy signals</h3></div></div>
+  </div>
+  <div class="panel" id="panel-log">
+    <div class="log-box" id="c-log">Waiting for a run...</div>
+  </div>
+</main>
+</div>
+
+<script>
+let polling = null;
+
+window.addEventListener("DOMContentLoaded", () => {
+  checkStatus();
+  fetchBriefing();
+  setInterval(checkStatus, 10000);
+});
+
+function show(id, el) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  document.getElementById("panel-" + id).classList.add("active");
+  if (el) el.classList.add("active");
+}
+
+async function checkStatus() {
+  try {
+    const s = await fetch("/api/status").then(r => r.json());
+    const keyPill = document.getElementById("pillKey");
+    if (s.apiKeySet) {
+      keyPill.textContent = "API key ok";
+      keyPill.className = "pill ok";
+    } else {
+      keyPill.textContent = "No API key";
+      keyPill.className = "pill err";
+    }
+    document.getElementById("pillModel").textContent = (s.model || "").replace("claude-","").replace("-20250514","");
+    const btn    = document.getElementById("runBtn");
+    const status = document.getElementById("runStatus");
+    if (s.isRunning) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Running...';
+      status.textContent = "Agent is running — takes 2-4 minutes";
+      if (!polling) polling = setInterval(pollForResult, 8000);
+    } else {
+      btn.disabled = false;
+      btn.textContent = "Run Now";
+      if (s.lastError) {
+        status.textContent = "Last run failed: " + s.lastError;
+      } else if (s.lastRunAt) {
+        status.textContent = "Last run: " + s.lastRunAt.slice(0,16).replace("T"," ");
+      } else {
+        status.textContent = "Click to generate today's briefing";
+      }
+      if (polling) { clearInterval(polling); polling = null; }
+    }
+  } catch (_) {}
+}
+
+async function pollForResult() {
+  await checkStatus();
+  const s = await fetch("/api/status").then(r => r.json()).catch(() => ({}));
+  if (!s.isRunning && s.hasBriefing) {
+    fetchBriefing();
+    fetchLog();
+  }
+}
+
+async function runAgent() {
+  const r = await fetch("/api/run", { method: "POST" });
+  const j = await r.json();
+  if (!r.ok) { alert(j.error); return; }
+  document.getElementById("runStatus").textContent = j.message;
+  checkStatus();
+  polling = setInterval(pollForResult, 8000);
+}
+
+async function fetchBriefing() {
+  const r = await fetch("/api/briefing");
+  if (!r.ok) return;
+  renderAll(await r.json());
+}
+
+async function fetchLog() {
+  const r = await fetch("/api/log");
+  if (!r.ok) return;
+  const { log } = await r.json();
+  document.getElementById("c-log").textContent = log.join("\n");
+}
+
+function renderAll(b) {
+  const s        = b.synthesis || {};
+  const ideas    = b.ideas     || [];
+  const articles = b.articles  || [];
+  const stats    = b.stats     || {};
+  const trends   = s.top_trends        || [];
+  const actions  = s.this_week_actions || [];
+  const signals  = s.policy_signals    || [];
+  const urgent   = s.urgent_items      || [];
+  document.getElementById("pillDate").textContent    = b.date || "—";
+  document.getElementById("pillRuntime").textContent = (b.elapsed_seconds || 0) + "s";
+  document.getElementById("brand-date").textContent  = b.date || "";
+  document.getElementById("s-articles").textContent  = stats.scored_articles ?? "—";
+  document.getElementById("s-ideas").textContent     = stats.ideas_generated ?? "—";
+  document.getElementById("s-urgent").textContent    = urgent.length;
+  document.getElementById("s-trends").textContent    = trends.length;
+  document.getElementById("b-trends").textContent    = trends.length;
+  document.getElementById("b-actions").textContent   = actions.length;
+  document.getElementById("b-urgent").textContent    = urgent.length;
+  document.getElementById("b-ideas").textContent     = ideas.length;
+  document.getElementById("b-articles").textContent  = articles.length;
+  document.getElementById("b-signals").textContent   = signals.length;
+  _renderSummary(s, urgent);
+  _renderTrends(trends);
+  _renderActions(actions);
+  _renderUrgent(urgent);
+  _renderIdeas(ideas);
+  _renderArticles(articles);
+  _renderSignals(signals);
+}
+
+function _renderSummary(s, urgent) {
+  let h = "";
+  if (urgent.length) {
+    h += '<div class="urgent"><h3>Urgent — action required</h3><ul>';
+    urgent.forEach(u => { h += "<li>" + x(typeof u === "string" ? u : u.title || "") + "</li>"; });
+    h += "</ul></div>";
+  }
+  h += '<div class="card"><p class="exec">' + x(s.executive_summary || "No summary available.") + "</p></div>";
+  if (s.word_of_the_day) {
+    h += '<div class="card" style="border-left:3px solid var(--purple)"><span style="color:var(--purple);font-size:11px;text-transform:uppercase;letter-spacing:.06em">Word of the day</span><br><span style="font-size:16px;font-weight:600">' + x(s.word_of_the_day) + "</span></div>";
+  }
+  document.getElementById("c-summary").innerHTML = h;
+}
+
+function _renderTrends(trends) {
+  if (!trends.length) { document.getElementById("c-trends").innerHTML = '<div class="empty"><h3>No trends yet</h3></div>'; return; }
+  document.getElementById("c-trends").innerHTML = trends.map((t, i) =>
+    '<div class="card trend">' +
+    '<div class="trend-title">' + (i+1) + ". " + x(t.trend_title||"") + "</div>" +
+    '<div class="trend-desc">' + x(t.description||"") + "</div>" +
+    (t.uae_opportunity ? '<div class="trend-uae">UAE: ' + x(t.uae_opportunity) + "</div>" : "") +
+    ((t.global_examples||[]).length ? '<div class="chips">' + t.global_examples.map(e => '<span class="chip">' + x(e) + "</span>").join("") + "</div>" : "") +
+    "</div>"
+  ).join("");
+}
+
+function _renderActions(actions) {
+  if (!actions.length) { document.getElementById("c-actions").innerHTML = '<div class="empty"><h3>No actions yet</h3></div>'; return; }
+  document.getElementById("c-actions").innerHTML = '<div class="card">' + actions.map(a =>
+    '<div class="action"><div class="dot dot-' + (a.urgency||"medium") + '"></div><div>' +
+    '<div class="action-text">' + x(a.action||"") + "</div>" +
+    '<div class="action-sub">for: ' + x(a.audience||"") + "</div></div></div>"
+  ).join("") + "</div>";
+}
+
+function _renderUrgent(urgent) {
+  if (!urgent.length) { document.getElementById("c-urgent").innerHTML = '<div class="empty"><h3>No urgent items today</h3></div>'; return; }
+  document.getElementById("c-urgent").innerHTML = '<div class="card">' + urgent.map(u => {
+    const item = typeof u === "string" ? {title:u,action:"",deadline:""} : u;
+    return '<div class="action"><div class="dot dot-high"></div><div>' +
+      '<div class="action-text">' + x(item.title||"") + "</div>" +
+      (item.action   ? '<div class="action-sub">Action: '   + x(item.action)   + "</div>" : "") +
+      (item.deadline ? '<div class="action-sub">Deadline: ' + x(item.deadline) + "</div>" : "") +
+      "</div></div>";
+  }).join("") + "</div>";
+}
+
+function _renderIdeas(ideas) {
+  if (!ideas.length) { document.getElementById("c-ideas").innerHTML = '<div class="empty"><h3>No ideas yet</h3></div>'; return; }
+  document.getElementById("c-ideas").innerHTML = ideas.map(idea => {
+    const imp = idea.impact_potential || "medium";
+    const dif = idea.difficulty || "medium";
+    const partners = (idea.uae_partners||[]).map(p => '<span class="chip">' + x(p) + "</span>").join(" ");
+    return '<div class="card idea">' +
+      '<div class="idea-id">' + x(idea.id||"") + "</div>" +
+      '<div class="idea-title">' + x(idea.title||"") + "</div>" +
+      '<div class="idea-tags">' +
+      '<span class="tag tag-' + (imp==="high"?"green":"yellow") + '">Impact: ' + imp.toUpperCase() + "</span>" +
+      '<span class="tag tag-' + (dif==="high"?"red":dif==="medium"?"yellow":"green") + '">Difficulty: ' + dif.toUpperCase() + "</span>" +
+      '<span class="tag tag-blue">' + x(idea.timeline_estimate||"") + "</span>" +
+      '<span class="tag tag-blue">' + x(idea.investment_range||"") + "</span>" +
+      "</div>" +
+      '<div class="idea-row"><div class="idea-lbl">Problem</div><div class="idea-val">' + x(idea.problem_statement||"") + "</div></div>" +
+      '<div class="idea-row"><div class="idea-lbl">AI Approach</div><div class="idea-val">' + x(idea.ai_approach||"") + "</div></div>" +
+      '<div class="idea-row"><div class="idea-lbl">Beneficiaries</div><div class="idea-val">' + x(idea.target_beneficiaries||"") + "</div></div>" +
+      (partners ? '<div class="idea-row"><div class="idea-lbl">UAE Partners</div><div class="chips" style="margin-top:4px">' + partners + "</div></div>" : "") +
+      (idea.regulatory_notes ? '<div class="idea-row"><div class="idea-lbl">Regulatory</div><div class="idea-val">' + x(idea.regulatory_notes) + "</div></div>" : "") +
+      (idea.inspired_by ? '<div class="idea-row"><div class="idea-lbl">Inspired by</div><div class="idea-val">' + x(idea.inspired_by) + "</div></div>" : "") +
+      '<div class="quickstart"><strong>Quick start this week:</strong> ' + x(idea.quick_start_action||"") + "</div>" +
+      "</div>";
+  }).join("");
+}
+
+function _renderArticles(articles) {
+  if (!articles.length) { document.getElementById("c-articles").innerHTML = '<div class="empty"><h3>No articles yet</h3></div>'; return; }
+  const sMap = { breaking_news:["NEWS","s-news"], global_ai_implementation:["AI","s-ai"], policy_funding_signal:["POLICY","s-policy"] };
+  document.getElementById("c-articles").innerHTML = '<div class="article-wrap">' + articles.map(a => {
+    const [lbl,cls] = sMap[a.stream] || ["?","s-ai"];
+    const score = a.relevance_score || 0;
+    const pips  = Array.from({length:10},(_,i) => '<div class="score-pip' + (i<score?" on":"") + '"></div>').join("");
+    const ents  = (a.key_entities||[]).map(e => '<span class="chip">' + x(e) + "</span>").join(" ");
+    return '<div class="article">' +
+      '<div class="article-head">' +
+      '<span class="stream ' + cls + '">' + lbl + "</span>" +
+      '<div class="article-title">' + x(a.title||"") + (a.urgent?" 🚨":"") + "</div>" +
+      '<div class="score-row" title="' + score + '/10">' + pips + "</div>" +
+      "</div>" +
+      '<div class="article-meta">' + x(a.source||"") + " · " + x(a.date||"") + (a.url ? ' · <a href="' + x(a.url) + '" target="_blank">link</a>' : "") + "</div>" +
+      '<div class="article-sum">' + x(a.summary||"") + "</div>" +
+      (ents ? '<div class="chips" style="margin-top:8px">' + ents + "</div>" : "") +
+      (a.uae_applicability ? '<div class="uae-note">UAE: ' + x(a.uae_applicability) + "</div>" : "") +
+      "</div>";
+  }).join("") + "</div>";
+}
+
+function _renderSignals(signals) {
+  if (!signals.length) { document.getElementById("c-signals").innerHTML = '<div class="empty"><h3>No policy signals yet</h3></div>'; return; }
+  document.getElementById("c-signals").innerHTML = signals.map(s =>
+    '<div class="card signal">' +
+    '<div class="signal-src">' + x(s.source||"") + "</div>" +
+    '<div class="signal-text">' + x(s.signal||"") + "</div>" +
+    '<div class="signal-uae">UAE: ' + x(s.uae_relevance||"") + "</div>" +
+    "</div>"
+  ).join("");
+}
+
+function x(str) {
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+</script>
+</body>
+</html>
