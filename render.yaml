@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: uae-social-sector-ai-agent
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: AGENT_MODEL
+        value: claude-sonnet-4-20250514
+      - key: AGENT_MAX_TOKENS
+        value: "4096"
+      - key: N_IDEAS
+        value: "5"
+      - key: RELEVANCE_THRESHOLD
+        value: "5"
+    healthCheckPath: /api/status
